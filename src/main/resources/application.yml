@@ -1,0 +1,22 @@
+todoapp:
+  site:
+    author: SpringRunner
+    description: What's your plans today?
+  data:
+    initialize: true
+
+spring:
+  application:
+    name: todoapp
+
+logging:
+  level:
+    '[todoapp]': debug
+    web: trace
+    sql: debug
+
+server:
+  servlet:
+    encoding:
+      charset: utf-8
+      force: true

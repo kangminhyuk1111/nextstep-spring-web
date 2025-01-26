@@ -4,18 +4,26 @@ todoapp:
     description: What's your plans today?
   data:
     initialize: true
+  feature-toggles:
+    auth: true
+    onlineUsersCounter: false
 
 spring:
   application:
     name: todoapp
 
+# 로깅 레벨 정의
 logging:
   level:
     '[todoapp]': debug
     web: trace
     sql: debug
 
+# 서블릿 설정
 server:
+  error:
+    include-message: always
+    include-binding-errors: always
   servlet:
     encoding:
       charset: utf-8

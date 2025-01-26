@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.core.Ordered;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.request.WebRequest;
@@ -26,8 +28,14 @@ import java.util.Objects;
  */
 public class ReadableErrorAttributes implements ErrorAttributes, HandlerExceptionResolver, Ordered {
 
+    private final MessageSource messageSource;
+
     private final DefaultErrorAttributes delegate = new DefaultErrorAttributes();
     private final Logger log = LoggerFactory.getLogger(getClass());
+
+    public ReadableErrorAttributes(final MessageSource messageSource) {
+        this.messageSource = Objects.requireNonNull(messageSource);
+    }
 
     @Override
     public Map<String, Object> getErrorAttributes(WebRequest webRequest, ErrorAttributeOptions options) {
@@ -37,8 +45,22 @@ public class ReadableErrorAttributes implements ErrorAttributes, HandlerExceptio
         log.debug("obtain error-attributes: {}", attributes, error);
 
         if (Objects.nonNull(error)) {
-            // TODO attributes, error 을 사용해 message 속성을 읽기 좋은 문구로 가공한다.
-            // TODO ex) attributes.put("message", "문구");
+
+            String errorMessage;
+            if (error instanceof MessageSourceResolvable messageSourceResolvable) {
+                errorMessage = messageSource.getMessage(messageSourceResolvable, webRequest.getLocale());
+            } else {
+                var errorCode = "Exception.%s".formatted(error.getClass().getSimpleName());
+                errorMessage = messageSource.getMessage(errorCode, new Object[0], error.getMessage(), webRequest.getLocale());
+            }
+
+            attributes.put("message", errorMessage);
+        }
+
+        var bindingResult = extractBindingResult(error);
+        if (Objects.nonNull(bindingResult)) {
+            var errors = bindingResult.getAllErrors().stream().map(it -> messageSource.getMessage(it, webRequest.getLocale())).toList();
+            attributes.put("errors", errors);
         }
 
         return attributes;
